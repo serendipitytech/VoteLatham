@@ -64,8 +64,8 @@ def main():
         df['Age_Range'] = df['Age'].apply(categorize_age)
         
         # Sidebar filters
-        logo_url = "https://votelatham.com/assets/images/logo_1.png"
-        st.sidebar.image(logo_url, width=200)
+        logo_url = "https://votelatham.com/assets/images/logo/logo_lightbg.png"
+        st.sidebar.image(logo_url, width=300)
         st.sidebar.subheader("Filters")
         selected_status = st.sidebar.selectbox("Select Status", df['Voter_Status'].unique(), index=df['Voter_Status'].unique().tolist().index('ACT'))
         selected_race = st.sidebar.multiselect("Select Race", df['Race'].unique(), default=df['Race'].unique())
