@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from datetime import datetime
 import urllib.parse
 
@@ -51,7 +52,7 @@ def main():
     # Load data
     df = load_data()
     
-    # Display table for count breakdown by race, gender, age range, and party
+    # Display treemap for count breakdown by race, gender, and party
     if df is not None:
         # Replace race codes with race names
         df['Race'] = df['Race'].map(race_mapping)
@@ -64,7 +65,7 @@ def main():
         df['Age_Range'] = df['Age'].apply(categorize_age)
         
         # Sidebar filters
-        logo_url = "https://serendipitytech.s3.amazonaws.com/public/votelatham.png"
+        logo_url = "https://votelatham.com/assets/images/logo/logo_lightbg.png"
         st.sidebar.image(logo_url, width=300)
         st.sidebar.subheader("Filters")
         selected_status = st.sidebar.selectbox("Select Status", df['Voter_Status'].unique(), index=df['Voter_Status'].unique().tolist().index('ACT'))
@@ -72,55 +73,25 @@ def main():
         selected_gender = st.sidebar.multiselect("Select Gender", df['Gender'].unique(), default=df['Gender'].unique())
         selected_age_ranges = st.sidebar.multiselect("Select Age Ranges", ["18-28", "29-40", "41-55", "56+"], default=["18-28", "29-40", "41-55", "56+"])
         
-        # New filters for PrimaryCount and GeneralCount
-        selected_primary_count = st.sidebar.number_input("Select Primary Count", min_value=0, max_value=df['PrimaryCount'].max(), value=0)
-        selected_general_count = st.sidebar.number_input("Select General Count", min_value=0, max_value=df['GeneralCount'].max(), value=0)
-        
-         # Dynamic elections selector with a maximum of 4 selections
-        date_columns = [col for col in df.columns if col[0].isdigit()]
-        default_selection = ['11/08/2022_GEN', '11/03/2020_GEN', '08/23/2022_PRI', '08/18/2020_PRI']
-        selected_elections = st.sidebar.multiselect("Select Elections (Max 4)", date_columns, default=default_selection, key="elections")
-        st.sidebar.write("This filter only applies to the voter history counts table")
-
         # Filter dataframe based on selected filters
         filtered_df = df[(df['Race'].isin(selected_race)) & 
                          (df['Gender'].isin(selected_gender)) & 
                          (df['Age_Range'].isin(selected_age_ranges)) & 
-                         (df['Voter_Status'] == selected_status) & 
-                         (df['PrimaryCount'] >= selected_primary_count) & 
-                         (df['GeneralCount'] >= selected_general_count)]
+                         (df['Voter_Status'] == selected_status)]
         
-        # Display table for count breakdown by race, gender, and party
-        st.header("Voter Counts by Race, Gender, and Party")
-        pivot_df = pd.pivot_table(filtered_df, index=['Race', 'Gender'], columns='Party', values='Voter_ID', aggfunc='count', fill_value=0)
-        pivot_df['Total'] = pivot_df.sum(axis=1)
-        pivot_df_sorted = pivot_df.sort_index(level=[0, 1])  # Sort by Race and Gender
-        st.table(pivot_df_sorted)
-        st.write('<style>tr:hover {background-color: #5aclee;}</style>', unsafe_allow_html=True)
+        # Prepare data for treemap
+        treemap_data = filtered_df.groupby(['Race', 'Gender', 'Party']).size().reset_index(name='Count')
         
+        # Create treemap
+        fig = px.treemap(treemap_data, path=['Race', 'Gender', 'Party'], values='Count', 
+                         color='Count', color_continuous_scale='viridis', 
+                         title='Voter Counts by Race, Gender, and Party')
         
-        # Count of voters who voted in 0, 1, 2, 3, or all of the selected elections
-        election_counts = {}
-        for index, row in filtered_df.iterrows():
-            key = (row['Race'], row['Gender'])
-            if key not in election_counts:
-                election_counts[key] = [0] * 5  # Initialize count to 0 for all elections
-            count = sum(1 for election in selected_elections if row[election] in ['A', 'E', 'Y'])
-            election_counts[key][count] += 1
+        # Update layout
+        fig.update_layout(margin=dict(t=50, l=0, r=0, b=0))
         
-        # Create DataFrame from election counts
-        election_counts_df = pd.DataFrame(election_counts).T
-        election_counts_df.index.names = ['Race', 'Gender']
-        election_counts_df.columns = ['0 Elections', '1 Election', '2 Elections', '3 Elections', '4 Elections']
-        
-        # Sort the DataFrame by index
-        election_counts_df_sorted = election_counts_df.sort_index(level=[0, 1])
-        
-        # Display DataFrame
-        st.header("Voter History Counts")
-        election_counts_df_sorted = election_counts_df.sort_index(level=[0, 1])
-        st.table(election_counts_df_sorted)
-        st.write('<style>tr:hover {background-color:#5ac1ee;}</style>', unsafe_allow_html=True)
+        # Display treemap
+        st.plotly_chart(fig)
 
 if __name__ == "__main__":
     main()
