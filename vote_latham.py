@@ -92,6 +92,38 @@ def main():
         
         # Display treemap
         st.plotly_chart(fig)
+        
+        # Display table for count breakdown by race, gender, and party
+        st.header("Voter Counts by Race, Gender, and Party")
+        pivot_df = pd.pivot_table(filtered_df, index=['Race', 'Gender'], columns='Party', values='Voter_ID', aggfunc='count', fill_value=0)
+        pivot_df['Total'] = pivot_df.sum(axis=1)
+        pivot_df_sorted = pivot_df.sort_index(level=[0, 1])  # Sort by Race and Gender
+        st.table(pivot_df_sorted)
+        st.write('<style>tr:hover {background-color: #5aclee;}</style>', unsafe_allow_html=True)
+        
+        
+        # Count of voters who voted in 0, 1, 2, 3, or all of the selected elections
+        election_counts = {}
+        for index, row in filtered_df.iterrows():
+            key = (row['Race'], row['Gender'])
+            if key not in election_counts:
+                election_counts[key] = [0] * 5  # Initialize count to 0 for all elections
+            count = sum(1 for election in selected_elections if row[election] in ['A', 'E', 'Y'])
+            election_counts[key][count] += 1
+        
+        # Create DataFrame from election counts
+        election_counts_df = pd.DataFrame(election_counts).T
+        election_counts_df.index.names = ['Race', 'Gender']
+        election_counts_df.columns = ['0 Elections', '1 Election', '2 Elections', '3 Elections', '4 Elections']
+        
+        # Sort the DataFrame by index
+        election_counts_df_sorted = election_counts_df.sort_index(level=[0, 1])
+        
+        # Display DataFrame
+        st.header("Voter History Counts")
+        election_counts_df_sorted = election_counts_df.sort_index(level=[0, 1])
+        st.table(election_counts_df_sorted)
+        st.write('<style>tr:hover {background-color:#5ac1ee;}</style>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
