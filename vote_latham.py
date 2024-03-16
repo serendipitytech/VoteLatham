@@ -74,8 +74,8 @@ def main():
         selected_age_ranges = st.sidebar.multiselect("Select Age Ranges", ["18-28", "29-40", "41-55", "56+"], default=["18-28", "29-40", "41-55", "56+"])
         
         # New filters for PrimaryCount and GeneralCount
-        selected_primary_count = st.sidebar.number_input("Select Primary Count", min_value=0, max_value=df['PrimaryCount'].max(), value=0)
-        selected_general_count = st.sidebar.number_input("Select General Count", min_value=0, max_value=df['GeneralCount'].max(), value=0)
+        #selected_primary_count = st.sidebar.number_input("Select Primary Count", min_value=0, max_value=df['PrimaryCount'].max(), value=0)
+        #selected_general_count = st.sidebar.number_input("Select General Count", min_value=0, max_value=df['GeneralCount'].max(), value=0)
         
          # Dynamic elections selector with a maximum of 4 selections
         date_columns = [col for col in df.columns if col[0].isdigit()]
@@ -87,9 +87,9 @@ def main():
         filtered_df = df[(df['Race'].isin(selected_race)) & 
                          (df['Gender'].isin(selected_gender)) & 
                          (df['Age_Range'].isin(selected_age_ranges)) & 
-                         (df['Voter_Status'] == selected_status) & 
-                         (df['PrimaryCount'] >= selected_primary_count) & 
-                         (df['GeneralCount'] >= selected_general_count)]
+                         (df['Voter_Status'] == selected_status)]
+                         #(df['PrimaryCount'] >= selected_primary_count) & 
+                         #(df['GeneralCount'] >= selected_general_count)]
         
         # Display table for count breakdown by race, gender, and party
         st.header("Voter Counts by Race, Gender, and Party")
